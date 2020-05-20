@@ -47,7 +47,7 @@ def read_data(idd,step):
 def read_synthetic(ds_name, ds_prb, ds_scan, step):
 
     # read scan positions
-    tmp = np.load('/home/beams/XYU/tike/tests/'+ds_name+'/scan'+ds_scan+'.npy')
+    tmp = np.load('data/'+ds_name+'/scan'+ds_scan+'.npy')
     #tmp = np.load('/home/beams/XYU/tike/tests/coins/scan512.npy')
     scan = tmp[:, ::step]
     print(scan.shape)
@@ -60,16 +60,16 @@ def read_synthetic(ds_name, ds_prb, ds_scan, step):
     # plt.plot(scan[1,0], scan[0,0],'.', color='blue')
     # plt.savefig('scan.png',dpi=500)
     # read probe initial guess
-    prb = np.load('/home/beams/XYU/tike/tests/'+ds_name+'/probe'+ds_prb+'.npy')
+    prb = np.load('data/'+ds_name+'/probe'+ds_prb+'.npy')
     #prb = np.load('/home/beams/XYU/tike/tests/coins/probe512.npy')
     print(prb.dtype)
-    data = np.load('/home/beams/XYU/tike/tests/'+ds_name+'/'+ds_prb+'data'+ds_scan+'.npy')
+    data = np.load('data/'+ds_name+'/'+ds_prb+'data'+ds_scan+'.npy')
     #data = np.zeros([1, scan.shape[2], prb.shape[1], prb.shape[2]], dtype='float32')
     #data = np.load('/home/beams/XYU/tike/tests/coins/data512.npy')
     data = data[:, ::step]
     print(data.dtype)
     # initial guess for psi (can be read)
-    psi_ref = np.load('/home/beams/XYU/tike/tests/'+ds_name+'/'+ds_name+'.npy')
+    psi_ref = np.load('data/'+ds_name+'/'+ds_name+'.npy')
     #dxchange.write_tiff(np.angle(psi_ref),
     #                    'rec_'+ds_name+'/refangle_e', overwrite=True)
     #dxchange.write_tiff(np.abs(psi_ref),  'rec_'+ds_name+'/refamp_e', overwrite=True)
