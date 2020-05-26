@@ -7,6 +7,7 @@ import sys
 import warnings
 import ptychocg as pt
 import concurrent.futures as cf
+from os import path
 from functools import partial
 from numpy import linalg as la
 from skimage.measure import block_reduce
@@ -63,11 +64,6 @@ def read_synthetic(ds_name, ds_prb, ds_scan, step):
     prb = np.load('data/'+ds_name+'/probe'+ds_prb+'.npy')
     #prb = np.load('/home/beams/XYU/tike/tests/coins/probe512.npy')
     print(prb.dtype)
-    data = np.load('data/'+ds_name+'/'+ds_prb+'data'+ds_scan+'.npy')
-    #data = np.zeros([1, scan.shape[2], prb.shape[1], prb.shape[2]], dtype='float32')
-    #data = np.load('/home/beams/XYU/tike/tests/coins/data512.npy')
-    data = data[:, ::step]
-    print(data.dtype)
     # initial guess for psi (can be read)
     psi_ref = np.load('data/'+ds_name+'/'+ds_name+'.npy')
     #dxchange.write_tiff(np.angle(psi_ref),
@@ -76,6 +72,27 @@ def read_synthetic(ds_name, ds_prb, ds_scan, step):
     #exit()
     #psi_ref = np.load('/home/beams/XYU/tike/tests/coins/coins.npy')
     psi = np.zeros([1, psi_ref.shape[1], psi_ref.shape[2]], dtype='complex64', order='c')+1
+    data_name = 'data/'+ds_name+'/'+ds_prb+'data'+ds_scan+'.npy'
+    if path.exists(data_name):
+        data = np.load('data/'+ds_name+'/'+ds_prb+'data'+ds_scan+'.npy')
+        print("true")
+    else:
+        print("----Generating synthetic data----")
+        slv_gen = pt.CGPtychoSolver(nscan//10, prb.shape[2], 256, 256, psi.shape[0], psi.shape[1], psi.shape[2], 1)
+        data_gen = cp.zeros([1, nscan, 256, 256], dtype='float32')
+        scan_gen = cp.array(scan)
+        for i in range(10):
+            data_gen[:, nscan//10*i:nscan//10*(i+1)] = slv_gen.fwd_ptycho_batch(cp.array(psi_ref), scan_gen[:, :, nscan//10*i:nscan//10*(i+1)], cp.array(prb))
+        del slv_gen
+        data = cp.asnumpy(data_gen)
+        np.save('data/'+ds_name+'/'+ds_prb+'data'+ds_scan, data)
+        del data_gen
+        del scan_gen
+        print("false")
+    #data = np.zeros([1, scan.shape[2], prb.shape[1], prb.shape[2]], dtype='float32')
+    #data = np.load('/home/beams/XYU/tike/tests/coins/data512.npy')
+    data = data[:, ::step]
+    print(data.dtype)
     return psi_ref, psi, prb, scan, data
 
 if __name__ == "__main__":
