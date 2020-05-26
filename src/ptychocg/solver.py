@@ -285,14 +285,12 @@ class CGPtychoSolver(PtychoCuFFT):
     #    fx = f(x)  # Save the result of f(x) instead of computing it many times
     #    # Decrease the step length while the step increases the cost function
     #    accu = 0
-    #    print("sbls:", f(x + step_length * d), fx + step_shrink * m)
     #    while f(x + step_length * d) > fx + step_shrink * m:
     #        accu += 1
     #        if step_length < 1e-32:
     #            warnings.warn("Line search failed for conjugate gradient.")
     #            return 0
     #        step_length *= step_shrink
-    #    #print("iter#:", accu)
     #    return step_length
 
     def grad(
@@ -333,7 +331,6 @@ class CGPtychoSolver(PtychoCuFFT):
             # forward operator
             self.fpsi.fill(0+0j)
             self.fpsi = self.fwd_ptycho(self.fpsi, psi, scan, prb)
-           #print("fpsi:", fpsi.shape)
             gradpsi0 = gradpsi
            # take gradient
             if model == 'gaussian':
@@ -410,7 +407,6 @@ class CGPtychoSolver(PtychoCuFFT):
             model='gaussian',
             recover_prb=False,
     ):
-        print("gradpsitest:", gradpsi)
         # Dai-Yuan direction
         #dpsi = -gradpsi
         if first == True:
@@ -421,15 +417,10 @@ class CGPtychoSolver(PtychoCuFFT):
                 cp.linalg.norm(gradpsi)**2 /
                 (cp.sum(cp.conj(dpsi) * (gradpsi - self.gradpsi0))) * dpsi)
         self.gradpsi0 = gradpsi.copy()
-        print("gradpsi:", cp.asnumpy(gradpsi))
-        print("dpsi:", cp.asnumpy(dpsi))
         #gammapsi = 0.25
         # line search
         if model == 'gaussian':
             f = cp.linalg.norm(cp.abs(self.fpsi) - cp.sqrt(data))**2
-            print("dsbtest:", cp.linalg.norm(cp.abs(self.fpsi) - cp.sqrt(data)))
-            #print(cp.abs(fpsi), cp.abs(fpsi).shape, cp.sqrt(data), cp.sqrt(data).shape)
-            #print(f, cp.linalg.norm(cp.abs(fpsi) - cp.sqrt(data)))
         elif model == 'poisson':
             f = cp.sum(
                 cp.abs(self.fpsi)**2 - 2 * data * cp.log(cp.abs(self.fpsi) + 1e-32))
@@ -462,8 +453,6 @@ class CGPtychoSolver(PtychoCuFFT):
         #self.fpsi = self.fpsi + gammapsi * self.fdpsi
         if model == 'gaussian':
             f = cp.linalg.norm(cp.abs(self.fpsi + gammapsi * self.fdpsi) - cp.sqrt(data))**2
-            #print(cp.abs(fpsi), cp.abs(fpsi).shape, cp.sqrt(data), cp.sqrt(data).shape)
-            #print(f, cp.linalg.norm(cp.abs(fpsi) - cp.sqrt(data)))
         elif model == 'poisson':
             f = cp.sum(
                 cp.abs(self.fpsi)**2 - 2 * data * cp.log(cp.abs(self.fpsi) + 1e-32))
@@ -491,15 +480,9 @@ class CGPtychoSolver(PtychoCuFFT):
         #print("Elapsed time during the whole program in seconds:",
         #                                                t1_stop-t1_start)
         # update psi
-        print("sblength:", gammapsi)
         deltapsi = gammapsi * dpsi
         psi = psi + gammapsi * dpsi
         #psi_gpu = cp.asnumpy(psi[0])
-        #print("y:", psi_gpu[np.where(psi_gpu!=(1+0j))])
-        #print("x=", (cp.asnumpy(psi[0])!=(1+0j)).nonzero()[0].size)
-        #print("x:", (cp.asnumpy(psi[0])!=(1+0j)).nonzero()[0].tolist())
-        #print("y=", (cp.asnumpy(psi[0])!=(1+0j)).nonzero()[1].size)
-        #print("y:", (cp.asnumpy(psi[0])!=(1+0j)).nonzero()[1].tolist())
 
         return {
             'psi': psi,

@@ -51,8 +51,6 @@ def read_synthetic(ds_name, ds_prb, ds_scan, step):
     tmp = np.load('data/'+ds_name+'/scan'+ds_scan+'.npy')
     #tmp = np.load('/home/beams/XYU/tike/tests/coins/scan512.npy')
     scan = tmp[:, ::step]
-    print(scan.shape)
-    print(scan[:,:,0].shape)
     #for e in np.nditer(tmp[0, :, 0], flags = ['external_loop'], order='C'):
 
     scan = np.moveaxis(scan, [0, 1, 2], [-2, -1, -3])
@@ -63,7 +61,6 @@ def read_synthetic(ds_name, ds_prb, ds_scan, step):
     # read probe initial guess
     prb = np.load('data/'+ds_name+'/probe'+ds_prb+'.npy')
     #prb = np.load('/home/beams/XYU/tike/tests/coins/probe512.npy')
-    print(prb.dtype)
     # initial guess for psi (can be read)
     psi_ref = np.load('data/'+ds_name+'/'+ds_name+'.npy')
     #dxchange.write_tiff(np.angle(psi_ref),
@@ -75,7 +72,6 @@ def read_synthetic(ds_name, ds_prb, ds_scan, step):
     data_name = 'data/'+ds_name+'/'+ds_prb+'data'+ds_scan+'.npy'
     if path.exists(data_name):
         data = np.load('data/'+ds_name+'/'+ds_prb+'data'+ds_scan+'.npy')
-        print("true")
     else:
         print("----Generating synthetic data----")
         slv_gen = pt.CGPtychoSolver(nscan//10, prb.shape[2], 256, 256, psi.shape[0], psi.shape[1], psi.shape[2], 1)
@@ -88,11 +84,9 @@ def read_synthetic(ds_name, ds_prb, ds_scan, step):
         np.save('data/'+ds_name+'/'+ds_prb+'data'+ds_scan, data)
         del data_gen
         del scan_gen
-        print("false")
     #data = np.zeros([1, scan.shape[2], prb.shape[1], prb.shape[2]], dtype='float32')
     #data = np.load('/home/beams/XYU/tike/tests/coins/data512.npy')
     data = data[:, ::step]
-    print(data.dtype)
     return psi_ref, psi, prb, scan, data
 
 if __name__ == "__main__":
@@ -117,7 +111,6 @@ if __name__ == "__main__":
     file_iter = open(fname+'_iter.txt', 'a')
     file_norm = open(fname+'_norm.txt', 'a')
     file_time = open(fname+'_time.txt', 'a')
-    print(fname)
     syn = str(sys.argv[7])
     #cp.cuda.Device(igpu).use()  # gpu id to use
     if (syn == '-s'):
@@ -136,18 +129,11 @@ if __name__ == "__main__":
     else:
         sys.exit('Must specify the input data type.')
 
-    print(scan_cpu.shape)
-    print(data_cpu.shape)
-    print(prb_cpu.shape)
 
     [ntheta, nz,n] = psi_cpu.shape
-    print("ntheta:", ntheta, nz, n)
     [ntheta,nscan,ndety,ndetx] = data_cpu.shape
-    print("nscan:", ntheta, nscan, ndety, ndetx)
-    print("scan:", scan_cpu.shape)
     nscan = scan_cpu.shape[2]
     nprb = prb_cpu.shape[2]
-    print("nprb:", nprb)
     ptheta = 1 # number of angles to process simultaneosuly
     model = 'gaussian'  # minimization funcitonal (poisson,gaussian)
     recover_prb = False # recover probe or not
@@ -213,7 +199,6 @@ if __name__ == "__main__":
         else:
             data_e = cp.array(data_cpu)
 
-        print('test:', data_e.shape)
         time = 0.0
         for i in range(pit):
             t2 = perf_counter()
@@ -246,7 +231,6 @@ if __name__ == "__main__":
                     data_e, psi_e, scan_e, prb_e, first, dpsi_e, gradpsi_e, test_psi,  gammapsi_e, piter=1, model=model, recover_prb=recover_prb)
 
             gammapsi_e = step_length
-            print("sbgamma:", gammapsi_e)
             result_e = slv.update_batch(
                 data_e, psi_e, scan_e, prb_e, first, dpsi_e, gradpsi_e, test_psi,  gammapsi_e, piter=1, model=model, recover_prb=recover_prb)
             psi_e, prb_e, dpsi_e, gradpsi_e, gammapsi_e = result_e['psi'], result_e['prb'], result_e['dpsi'], result_e['gradpsi'], result_e['gammapsi']
@@ -298,9 +282,6 @@ if __name__ == "__main__":
             dxchange.write_tiff(np.angle(psi_e_cpu),
                                 'rec_pillar/'+name+'/psiangle_e', overwrite=True)
             dxchange.write_tiff(np.abs(psi_e_cpu),  'rec_pillar/'+name+'/psiamp_e', overwrite=True)
-        print("test_psi:", psi_e_cpu.shape, psi_e_cpu[:,100:102,100:102])
-        print("test_dpsi:", cp.asnumpy(dpsi_e)[:,10:20,10:20])
-        print("test_gradpsi0:", cp.asnumpy(gradpsi0_e)[:,10:20,10:20])
         del dpsi_e
         del gradpsi0_e
 
@@ -316,7 +297,6 @@ if __name__ == "__main__":
         #scan_cpu[:, 0] = np.load('model/coords.npy')[:, :nscan].astype('float32')
         xmax = np.amax(scan_cpu[0])
         ymax = np.amax(scan_cpu[1])
-        print("x=%f, y=%f" % (xmax, ymax))
         boarder = np.array([[0, 0], [0, ymax/2], [xmax/2, 0], [xmax/2, ymax/2]])
         test1 = np.ones([2, 1], dtype='float32')
         sizes = np.zeros([gpu_count], dtype='int32')
@@ -343,12 +323,10 @@ if __name__ == "__main__":
             #            break
             test1 = e
 
-        print(sizes)
         x_rint = np.rint(xmax/2)
         y_rint = np.rint(ymax/2)
         x_rint = x_rint.astype(int)
         y_rint = y_rint.astype(int)
-        print("xr=%f, yr=%f" % (x_rint, y_rint))
 
         counters = np.zeros([gpu_count], dtype='int32')
         times = np.zeros([gpu_count], dtype='float32')
@@ -595,7 +573,6 @@ if __name__ == "__main__":
                     result = slvs[gpu_id].dir_batch(
                         data[gpu_id], psi[gpu_id], scan[gpu_id], prb[gpu_id], first, dpsi[gpu_id], gradpsi[gpu_id], test_psi[gpu_id], gammapsi[gpu_id], piter=1, model=model, recover_prb=recover_prb)
                     psi[gpu_id], prb[gpu_id], dpsi[gpu_id], gradpsi[gpu_id], test_psi[gpu_id], fx[gpu_id] = result['psi'], result['prb'], result['dpsi'], result['gradpsi'], result['testpsi'], result['f']
-                    print("sbfx:", gpu_id, fx[gpu_id])
                     cp.cuda.Device().synchronize()
 
                 return result
@@ -642,7 +619,6 @@ if __name__ == "__main__":
                 #psi[gpu_id] += gammapsi[gpu_id]*dpsi[gpu_id]
                 cp.cuda.Device().synchronize()
                 psi_multi_cpu[gpu_id] = cp.asnumpy(psi[gpu_id])
-                print("cjsb:", gpu_id, gammapsi[gpu_id])
                 #print("test_psi_multi:", gpu_id,  psi_multi_cpu.shape, psi_multi_cpu[gpu_id,:,100:102,100:102])
                 #print("test_dpsi_multi:", gpu_id, cp.asnumpy(dpsi[gpu_id])[:,10:20,10:20])
                 #print("test_gradpsi0_multi:", gpu_id, cp.asnumpy(gradpsi0[gpu_id])[:,10:20,10:20])
@@ -670,7 +646,6 @@ if __name__ == "__main__":
             else:
                 first = False
             fx.fill(0.0)
-            print("sbfx:", fx[0])
             with cf.ThreadPoolExecutor(max_workers=gpu_count) as executor:
                 results = executor.map(multiGPU_grad, gpu_list)
                 results = list(results)
@@ -694,7 +669,6 @@ if __name__ == "__main__":
                 results = executor.map(multiGPU_minf, gpu_list)
             fdx_g = np.cumsum(fdx)[gpu_count-1]
             while fdx_g > fx_g + step_shrink * m:
-                print("sbls:", fdx_g, fx_g + step_shrink * m)
                 if step_length < 1e-32:
                     warnings.warn("Line search failed for conjugate gradient.")
                     step_length = 0
@@ -707,8 +681,6 @@ if __name__ == "__main__":
                     results = executor.map(multiGPU_minf, gpu_list)
                 fdx_g = np.cumsum(fdx)[gpu_count-1]
 
-            print("sbgamma:", gammapsi[0])
-            print("cjsbi:", i)
             with cf.ThreadPoolExecutor(max_workers=gpu_count) as executor:
                 results = executor.map(multiGPU_update, gpu_list)
                 #results = list(results)
